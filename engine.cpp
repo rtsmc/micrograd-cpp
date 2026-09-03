@@ -100,6 +100,9 @@ class Value {
             }
         }
 
+        float data() { return node->data; }
+        float grad() { return node->grad; }
+
         Value relu() const {
             auto out = std::make_shared<Node>(node->data < 0 ? 0 : node->data);
 

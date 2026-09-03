@@ -1,6 +1,13 @@
 #include "engine.cpp"
+#include <cassert>
 #include <cstdio>
 #include <iostream>
+#include <cmath>
+
+bool approximatelyEqual(float a, float b, float epsilon = 1e-5f)
+{
+    return std::fabs(a - b) <= epsilon;
+}
 
 void test1() {
     std::cout << "Test1\n";
@@ -76,10 +83,15 @@ void testMinus() {
     Value a(6.0);
     Value b(3.0);
     Value c = a - b;
+    assert(approximatelyEqual(3.0, c.data()));
+
     Value d = c - -1;
     std::cout << d << "\n";
+    assert(approximatelyEqual(4.0, d.data()));
+
     d.backward();
     d.display();
+    assert(approximatelyEqual(-1, b.grad()));
 }
 
 int main() {
