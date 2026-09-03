@@ -42,10 +42,33 @@ void test3() {
     f.display();
 }
 
+void testOverloading() {
+    std::cout << "testing ops with Value and a float\n";
+    Value a(2.0);
+    std::cout << a + 1 << "\n";
+
+    Value b(2.0);
+    std::cout << b * 2 << "\n";
+}
+
+void testPow() {
+    std::cout << "Testing powers\n";
+    Value a(4.0);
+    Value c = a.pow(2);
+    Value o = c.relu();
+    std::cout << o << "\n";
+    o.backward();
+    o.display();
+}
+
 int main() {
     test1();
     std::cout << "------------------------------------------------\n";
     test2();
     std::cout << "------------------------------------------------\n";
     test3();
+    std::cout << "------------------------------------------------\n";
+    testOverloading();
+    std::cout << "------------------------------------------------\n";
+    testPow();
 }

@@ -1,14 +1,18 @@
+#include <cassert>
 #include <memory>
+#include <optional>
 #include <unordered_set>
 #include <ostream>
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 enum class Op {
     None,
     Add,
     Mul,
-    ReLU
+    ReLU,
+    Pow
 };
 
 class Value {
@@ -16,6 +20,7 @@ class Value {
         struct Node {
             float data;
             float grad = 0.0;
+            std::optional<float> exponent;
 
             std::vector<std::shared_ptr<Node>> prev;
             Op op = Op::None;
@@ -24,21 +29,31 @@ class Value {
 
             void back() {
                 switch (op) {
+                    case Op::None:
+                        break;
+
                     case Op::Add:
+                        assert(prev.size() == 2);
                         prev[0]->grad += grad;
                         prev[1]->grad += grad;
                         break;
 
                     case Op::Mul:
+                        assert(prev.size() == 2);
                         prev[0]->grad += prev[1]->data * grad;
                         prev[1]->grad += prev[0]->data * grad;
                         break;
 
                     case Op::ReLU:
+                        assert(prev.size() == 1);
                         prev[0]->grad += (data > 0.0f) * grad;
                         break;
 
-                    default:
+                    case Op::Pow:
+                        assert(prev.size() == 1);
+                        assert(exponent.has_value());
+                        float p = *exponent;
+                        prev[0]->grad += (p * std::pow(prev[0]->data, p - 1)) * grad;
                         break;
                 }
             }
@@ -94,7 +109,18 @@ class Value {
             return Value(out);
         }
 
+        Value pow(const float other) const {
+            auto out = std::make_shared<Node>(std::pow(node->data, other));
+
+            out->prev = {node};
+            out->op = Op::Pow;
+            out->exponent = other;
+
+            return Value(out);
+        };
+
         // operators
+        Value operator+(const float other) const { return *this + Value(other); }
         Value operator+(const Value& other) const {
             auto out = std::make_shared<Node>(node->data + other.node->data);
 
@@ -104,6 +130,7 @@ class Value {
             return Value(out);
         }
 
+        Value operator*(const float other) const { return *this * Value(other); }
         Value operator*(const Value& other) const {
             auto out = std::make_shared<Node>(node->data * other.node->data);
 
