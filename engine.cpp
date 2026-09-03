@@ -12,7 +12,7 @@ enum class Op {
     Add,
     Mul,
     ReLU,
-    Pow
+    Pow,
 };
 
 class Value {
@@ -119,6 +119,8 @@ class Value {
             return Value(out);
         };
 
+        Value neg() const { return *this * -1; }
+
         // operators
         Value operator+(const float other) const { return *this + Value(other); }
         Value operator+(const Value& other) const {
@@ -130,6 +132,9 @@ class Value {
             return Value(out);
         }
 
+        Value operator-(float other) const { return *this + -other; };
+        Value operator-(const Value& other) const { return *this + other.neg(); };
+
         Value operator*(const float other) const { return *this * Value(other); }
         Value operator*(const Value& other) const {
             auto out = std::make_shared<Node>(node->data * other.node->data);
@@ -139,6 +144,9 @@ class Value {
 
             return Value(out);
         }
+
+        Value operator/(const float other) const { return *this * std::pow(other, -1); }
+        Value operator/(const Value& other) const { return *this * other.pow(-1); }
 
         friend std::ostream& operator<<(std::ostream& os, const Value& v) {
             return os << "Value(data=" << v.node->data << ")";

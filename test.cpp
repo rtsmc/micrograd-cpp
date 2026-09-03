@@ -61,6 +61,27 @@ void testPow() {
     o.display();
 }
 
+void testDiv() {
+    std::cout << "Testing div\n";
+    Value a(4.0);
+    Value b(2.0);
+    Value c = a/b;
+    std::cout << c << "\n";
+    c.backward();
+    c.display();
+}
+
+void testMinus() {
+    std::cout << "Testing subtract\n";
+    Value a(6.0);
+    Value b(3.0);
+    Value c = a - b;
+    Value d = c - -1;
+    std::cout << d << "\n";
+    d.backward();
+    d.display();
+}
+
 int main() {
     test1();
     std::cout << "------------------------------------------------\n";
@@ -71,4 +92,8 @@ int main() {
     testOverloading();
     std::cout << "------------------------------------------------\n";
     testPow();
+    std::cout << "------------------------------------------------\n";
+    testDiv();
+    std::cout << "------------------------------------------------\n";
+    testMinus();
 }
