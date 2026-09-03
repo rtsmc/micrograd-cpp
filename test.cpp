@@ -2,7 +2,8 @@
 #include <cstdio>
 #include <iostream>
 
-int main() {
+void test1() {
+    std::cout << "Test1\n";
     Value x1(2.0);
     Value x2(0.0);
 
@@ -18,13 +19,33 @@ int main() {
     Value o = n.relu();
 
     o.backward();
+    o.display();
+}
 
-    std::cout << x1 << '\n' << x2 << '\n' << w1 << '\n' << w2 << '\n' << b << '\n' << x1w1 << '\n' << x2w2 << '\n' <<
-        x1w1x2w2 << '\n' << n << '\n' << o << '\n';
+void test2() {
+    std::cout << "Test2\n";
+    Value a(3.0);
+    Value b = a + a;
+    b.backward();
+    b.display();
+}
 
-    std::cout << "GRADS: \n";
+void test3() {
+    std::cout << "Test3\n";
+    Value a(-2.0);
+    Value b(3.0);
+    Value d = a * b;
+    Value e = a + b;
+    Value f = d * e;
 
-    std::cout << x1.grad() << '\n' << x2.grad() << '\n' << w1.grad() << '\n' << w2.grad() << '\n' << b.grad() << '\n' << x1w1.grad()
-        << '\n' << x2w2.grad() << '\n' <<
-        x1w1x2w2.grad() << '\n' << n.grad() << '\n' << o.grad() << '\n';
+    f.backward();
+    f.display();
+}
+
+int main() {
+    test1();
+    std::cout << "------------------------------------------------\n";
+    test2();
+    std::cout << "------------------------------------------------\n";
+    test3();
 }

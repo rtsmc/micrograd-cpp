@@ -2,6 +2,7 @@
 #include <unordered_set>
 #include <ostream>
 #include <vector>
+#include <iostream>
 
 enum class Op {
     None,
@@ -73,9 +74,16 @@ class Value {
             }
         }
 
-        float data() const { return node->data; }
+        void display() {
+            std::vector<Node*> topo = {};
+            std::unordered_set<Node*> visited = {};
 
-        float grad() const { return node->grad; }
+            build_topo(topo, visited, node.get());
+            for (int i = 0; i < topo.size(); i++) {
+                std::cout << i << ": data: " << topo[i]->data
+                    << " grad: " << topo[i]->grad << "\n";
+            }
+        }
 
         Value relu() const {
             auto out = std::make_shared<Node>(node->data < 0 ? 0 : node->data);
