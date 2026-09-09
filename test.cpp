@@ -1,4 +1,4 @@
-#include "engine.cpp"
+#include "engine.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -20,8 +20,7 @@ void expectNear(const char* label, float actual, float expected) {
         return;
     }
 
-    throw std::runtime_error{std::string{label} + ": expected " + std::to_string(expected)
-                             + ", got " + std::to_string(actual)};
+    throw std::runtime_error{std::string{label} + ": expected " + std::to_string(expected) + ", got " + std::to_string(actual)};
 }
 
 void testLeafBackward() {
@@ -177,13 +176,8 @@ void testPowers() {
     };
 
     constexpr PowerCase cases[]{
-        {4.0f, 2.0f, 16.0f, 8.0f, "square"},
-        {2.0f, 0.0f, 1.0f, 0.0f, "zeroth power"},
-        {2.0f, 1.0f, 2.0f, 1.0f, "first power"},
-        {2.0f, -1.0f, 0.5f, -0.25f, "reciprocal"},
-        {4.0f, 0.5f, 2.0f, 0.25f, "square root"},
-        {0.0f, 2.0f, 0.0f, 0.0f, "zero squared"},
-        {-2.0f, 3.0f, -8.0f, 12.0f, "negative cube"},
+        {4.0f, 2.0f, 16.0f, 8.0f, "square"},      {2.0f, 0.0f, 1.0f, 0.0f, "zeroth power"}, {2.0f, 1.0f, 2.0f, 1.0f, "first power"},      {2.0f, -1.0f, 0.5f, -0.25f, "reciprocal"},
+        {4.0f, 0.5f, 2.0f, 0.25f, "square root"}, {0.0f, 2.0f, 0.0f, 0.0f, "zero squared"}, {-2.0f, 3.0f, -8.0f, 12.0f, "negative cube"},
     };
 
     for (const PowerCase& testCase : cases) {
