@@ -94,9 +94,10 @@ class Value {
             std::unordered_set<Node*> visited = {};
 
             build_topo(topo, visited, node.get());
-            for (int i = 0; i < topo.size(); i++) {
-                std::cout << i << ": data: " << topo[i]->data
-                    << " grad: " << topo[i]->grad << "\n";
+            std::size_t i = 0;
+            for (Node* nodeptr : topo) {
+                std::cout << i++ << ": data: " << nodeptr->data
+                    << " grad: " << nodeptr->grad << "\n";
             }
         }
 
