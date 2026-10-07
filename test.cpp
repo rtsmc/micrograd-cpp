@@ -1,12 +1,16 @@
 #include "engine.hpp"
+#include "nn.hpp"
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
+#include <random>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 constexpr float kAbsoluteTolerance{1e-5f};
 constexpr float kRelativeTolerance{1e-5f};
@@ -23,6 +27,7 @@ void expectNear(const char* label, float actual, float expected) {
     throw std::runtime_error{std::string{label} + ": expected " + std::to_string(expected) + ", got " + std::to_string(actual)};
 }
 
+// testing engine
 void testLeafBackward() {
     Value value{3.0f};
 
@@ -260,6 +265,138 @@ void testTemporaryLifetime() {
     expectNear("temporary graph input gradient", input.grad(), 7.0f);
 }
 
+
+// testing nn module
+void testNeuron() {
+    std::mt19937 gen{42};
+    Neuron neuron{2, gen};
+    std::vector<Value> params{neuron.parameters()};
+    if (params.size() != 3) {
+        throw std::runtime_error{"neuron parameter count must be 3"};
+    }
+
+    params[0].setData(-3.0f);
+    params[1].setData(1.0f);
+    params[2].setData(7.0f);
+    std::vector<Value> input{Value{2.0f}, Value{0.0f}};
+    Value output{neuron(input)};
+
+    expectNear("Neuron output", output.data(), 1.0f);
+    output.backward();
+    expectNear("Neuron first input gradient", input[0].grad(), -3.0f);
+    expectNear("Neuron second input gradient", input[1].grad(), 1.0f);
+    expectNear("Neuron first weight gradient", params[0].grad(), 2.0f);
+    expectNear("Neuron second weight gradient", params[1].grad(), 0.0f);
+    expectNear("Neuron bias gradient", params[2].grad(), 1.0f);
+
+    params[2].setData(5.0f);
+    expectNear("Neuron ReLU after bias update", neuron(input).data(), 0.0f);
+}
+
+void testLayer() {
+    std::mt19937 gen{42};
+    Layer layer{2, 2, gen, false};
+    std::vector<Value> params{layer.parameters()};
+    if (params.size() != 6) {
+        throw std::runtime_error{"layer parameter count must be 6"};
+    }
+
+    constexpr float data[]{-3.0f, 1.0f, 7.0f, -1.0f, 2.0f, 1.0f};
+    for (std::size_t i = 0; i < params.size(); ++i) {
+        params[i].setData(data[i]);
+    }
+    std::vector<Value> output{layer({Value{2.0f}, Value{0.0f}})};
+    if (output.size() != 2) {
+        throw std::runtime_error{"layer output count must be 2"};
+    }
+
+    expectNear("Layer first output", output[0].data(), 1.0f);
+    expectNear("Layer linear negative output", output[1].data(), -1.0f);
+}
+
+void testMLP() {
+    std::mt19937 gen{42};
+    MLP model{2, {3, 1}, gen};
+    std::vector<Value> params{model.parameters()};
+    if (params.size() != 13) {
+        throw std::runtime_error{"MLP parameter count must be 13"};
+    }
+
+    // Three hidden neurons (two weights and a bias each), then the output neuron.
+    constexpr float data[]{1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 2.0f, 3.0f, 4.0f, -10.0f};
+    for (std::size_t i = 0; i < params.size(); ++i) {
+        params[i].setData(data[i]);
+    }
+    std::vector<Value> input{Value{2.0f}, Value{0.0f}};
+    std::vector<Value> output{model(input)};
+    if (output.size() != 1) {
+        throw std::runtime_error{"MLP output count must be 1"};
+    }
+
+    // Hidden outputs are [2, 0, 1]; the final linear output is -2.
+    expectNear("MLP output", output[0].data(), -2.0f);
+    output[0].backward();
+    expectNear("MLP first input gradient", input[0].grad(), 2.0f);
+    expectNear("MLP second input gradient", input[1].grad(), 4.0f);
+
+    constexpr float gradients[]{4.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 8.0f, 0.0f, 4.0f, 2.0f, 0.0f, 1.0f, 1.0f};
+    for (std::size_t i = 0; i < params.size(); ++i) {
+        expectNear("MLP parameter gradient", params[i].grad(), gradients[i]);
+    }
+
+    params[12].setData(-9.0f);
+    expectNear("MLP output after bias update", model(input)[0].data(), -1.0f);
+
+    MLP singleLayer{1, {2}, gen};
+    std::vector<Value> singleParams{singleLayer.parameters()};
+    if (singleParams.size() != 4) {
+        throw std::runtime_error{"single-layer MLP parameter count must be 4"};
+    }
+    for (Value& param : singleParams) {
+        param.setData(-1.0f);
+    }
+    std::vector<Value> singleOutput{singleLayer({Value{1.0f}})};
+    if (singleOutput.size() != 2) {
+        throw std::runtime_error{"single-layer MLP output count must be 2"};
+    }
+    expectNear("single-layer MLP first linear output", singleOutput[0].data(), -2.0f);
+    expectNear("single-layer MLP second linear output", singleOutput[1].data(), -2.0f);
+}
+
+void testNNInvalidInputs() {
+    struct InvalidShape {
+        int nin;
+        std::vector<int> nouts;
+    };
+
+    const InvalidShape shapes[]{
+        {0, {1}}, {-1, {1}}, {1, {}}, {1, {0}}, {1, {-1}}, {1, {2, 0}}, {1, {2, -1}},
+    };
+    std::mt19937 gen{42};
+    for (const InvalidShape& shape : shapes) {
+        bool rejected{false};
+        try {
+            MLP model{shape.nin, shape.nouts, gen};
+        } catch (const std::invalid_argument&) {
+            rejected = true;
+        }
+        if (!rejected) {
+            throw std::runtime_error{"MLP must reject invalid dimensions"};
+        }
+    }
+
+    MLP model{2, {1}, gen};
+    bool rejected{false};
+    try {
+        model({Value{1.0f}});
+    } catch (const std::invalid_argument&) {
+        rejected = true;
+    }
+    if (!rejected) {
+        throw std::runtime_error{"MLP must reject an incorrect input size"};
+    }
+}
+
 int main() {
     try {
         testLeafBackward();
@@ -273,6 +410,10 @@ int main() {
         testBranchedGraph();
         testNeuronExample();
         testTemporaryLifetime();
+        testNeuron();
+        testLayer();
+        testMLP();
+        testNNInvalidInputs();
     } catch (const std::exception& error) {
         std::cerr << "Test failure: " << error.what() << '\n';
         return EXIT_FAILURE;

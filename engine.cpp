@@ -39,6 +39,9 @@ void Value::display() const {
 float Value::data() const { return node->data; }
 float Value::grad() const { return node->grad; }
 
+void Value::setData(float data) { node->data = data; }
+void Value::zeroGrad() { node->grad = 0.0f; }
+
 Value Value::relu() const {
     auto out = std::make_shared<Node>(node->data < 0 ? 0 : node->data);
 

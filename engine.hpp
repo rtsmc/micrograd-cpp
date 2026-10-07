@@ -17,6 +17,9 @@ class Value {
     float data() const;
     float grad() const;
 
+    void setData(float data);
+    void zeroGrad();
+
     Value relu() const;
     Value pow(float other) const;
     Value neg() const;
