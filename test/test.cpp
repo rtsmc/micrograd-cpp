@@ -1,5 +1,5 @@
-#include "engine.hpp"
-#include "nn.hpp"
+#include "micrograd/engine.hpp"
+#include "micrograd/nn.hpp"
 
 #include <algorithm>
 #include <cmath>
