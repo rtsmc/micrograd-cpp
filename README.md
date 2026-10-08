@@ -1,0 +1,1 @@
+A small practice project rewriting Andrej Karpathy's micrograd library in C++, to learn more about coding in C++ and what an autograd engine is.
